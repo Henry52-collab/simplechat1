@@ -38,33 +38,40 @@ public class EchoServer extends AbstractServer
 
   
   //Instance methods ************************************************
-  
-  /**
-   * This method handles any messages received from the client.
-   *
-   * @param msg The message received from the client.
-   * @param client The connection from which the message originated.
-   */
-  public void handleMessageFromClient
+
+    /**
+     * This method handles any messages received from the client.
+     *
+     * @param msg The message received from the client.
+     * @param client The connection from which the message originated.
+     */
+    public void handleMessageFromClient
     (Object msg, ConnectionToClient client)
-  {
-	int loginid;
-	System.out.println("A new client is attempting to connect to the server");
-    System.out.println("Message received: " + msg + " from " + client.getInfo("Int"));
-	
-	//E7c)
-	String message= (String)msg;
-	String[] newMsg = message.split(" ");
-	if(newMsg[0].equals("#login")){
-		loginid = Integer.parseInt(newMsg[1]);
-		client.setInfo("Integer",loginid);
-		
-	}
-    this.sendToAllClients(client.getInfo("Integer") + message);
-	
-	
-	
-  }
+    {
+        System.out.println("Message received: " + msg + " from " + client);
+        if (msg.toString().startsWith("#login")) {
+            if (client.getInfo("loginId") != null) {
+                try {
+                    // send an error message back
+                    client.sendToClient("You've already sent an loginId before!");
+                } catch (IOException ignored) {
+                }
+            } else {
+                String loginId = msg.toString().split(" ")[1];
+                client.setInfo("loginId", loginId);
+            }
+        } else {
+            if (client.getInfo("loginId") == null) {
+                try {
+                    // send an error message back
+                    client.sendToClient("You didn't set loginId!");
+                    client.close();
+                } catch (IOException ignored) {
+                }
+            }
+            this.sendToAllClients(client.getInfo("loginId") + " " + msg);
+        }
+    }
     
   /**
    * This method overrides the one in the superclass.  Called
@@ -117,8 +124,6 @@ public class EchoServer extends AbstractServer
    * This method is responsible for the creation of 
    * the server instance (there is no UI in this phase).
    *
-   * @param args[0] The port number to listen on.  Defaults to 5555 
-   *          if no argument is entered.
    */
   public static void main(String[] args) 
   {
